@@ -80,19 +80,36 @@ function App() {
 
   const applyFilter = (mode) => {
     let result = [...data].filter((item) => !item.l4);
+  
+    const parseTime = (t) => {
+      const [h, m] = t.split(":").map(Number);
+      return h * 60 + m;
+    };
+  
+    const rangesOverlap = (range1, range2) => {
+      const [start1, end1] = range1.split("-").map(t => parseTime(t.trim()));
+      const [start2, end2] = range2.split("-").map(t => parseTime(t.trim()));
+      return Math.max(start1, start2) < Math.min(end1, end2);
+    };
+  
     if (timeRange && day) {
       const blockedGd = new Set(
         secondaryData
-          .filter((entry) => entry.day.toLowerCase() === day.toLowerCase())
-          .map((entry) => entry.gd)
+          .filter(entry => 
+            entry.day.toLowerCase() === day.toLowerCase() &&
+            entry.workHours && 
+            rangesOverlap(entry.workHours, timeRange)
+          )
+          .map(entry => entry.gd)
       );
-      result = result.filter((item) => !blockedGd.has(item.gd));
+      result = result.filter(item => !blockedGd.has(item.gd));
     }
+  
     result.sort((a, b) => a.hours - b.hours);
-
-    if (mode === "krzepa") result = result.filter((item) => item.gender.toUpperCase() !== "K");
-    if (mode === "lajcik") result = result.filter((item) => item.gender.toUpperCase() !== "M");
-
+  
+    if (mode === "krzepa") result = result.filter(item => item.gender !== "K");
+    if (mode === "lajcik") result = result.filter(item => item.gender !== "M");
+  
     setFilteredData(result.slice(0, parseInt(numPeople) || 0));
   };
 
